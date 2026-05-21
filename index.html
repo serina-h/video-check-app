@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>動画チェックアプリ</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:#f5f5f0;color:#1a1a1a;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+/* Sidebar */
+.sidebar{width:210px;min-width:210px;background:#fff;border-right:1px solid #e8e8e4;display:flex;flex-direction:column}
+.sb-head{padding:14px 12px;border-bottom:1px solid #e8e8e4;display:flex;align-items:center;justify-content:space-between}
+.sb-head h1{font-size:13px;font-weight:600;color:#1a1a1a}
+.sb-head span{font-size:11px;color:#999}
+.cl{flex:1;overflow-y:auto;padding:6px}
+.ci{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;color:#1a1a1a;transition:background .1s}
+.ci:hover{background:#f5f5f0}
+.ci.active{background:#EBF5FF;color:#1a56db}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.ci-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.add-cl{margin:6px;padding:7px 9px;border-radius:7px;border:1px dashed #ccc;background:transparent;cursor:pointer;font-size:12px;color:#666;display:flex;align-items:center;gap:5px;width:calc(100% - 12px);transition:background .1s}
+.add-cl:hover{background:#f5f5f0}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tabs{display:flex;border-bottom:1px solid #e8e8e4;background:#fff;padding:0 14px;gap:2px}
+.tab{padding:11px 12px;font-size:12px;cursor:pointer;color:#666;border-bottom:2px solid transparent;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:color .1s}
+.tab:hover{color:#1a1a1a}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.content{flex:1;overflow-y:auto;padding:18px}
+/* Cards */
+.card{background:#fff;border:1px solid #e8e8e4;border-radius:10px;padding:14px;margin-bottom:12px}
+.sec-title{font-size:14px;font-weight:600;margin-bottom:12px;color:#1a1a1a;display:flex;align-items:center;gap:6px}
+.sect-div{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.sect-div::after{content:'';flex:1;height:1px;background:#e8e8e4}
+/* Rules */
+.rule-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:7px;margin-bottom:5px;background:#f9f9f7}
+.rcat{font-size:11px;padding:2px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0;margin-top:1px;font-weight:500}
+.rtxt{font-size:13px;color:#1a1a1a;flex:1;line-height:1.5}
+.ibtn{background:none;border:none;cursor:pointer;color:#999;padding:3px;border-radius:5px;font-size:14px;display:flex;line-height:1;transition:color .1s}
+.ibtn:hover{color:#e53e3e;background:#fff0f0}
+/* Add area */
+.add-area{background:#f5f5f0;border-radius:8px;padding:10px;margin-top:10px}
+.add-row{display:flex;gap:6px;margin-bottom:0}
+.add-row select,.add-row input{padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#1a1a1a;outline:none}
+.add-row select{width:110px}
+.add-row input{flex:1}
+.add-row select:focus,.add-row input:focus{border-color:#4a9eff}
+.add-row button{padding:7px 12px;background:#1a1a1a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;display:flex;align-items:center;gap:4px;transition:background .1s}
+.add-row button:hover{background:#333}
+/* PDF upload */
+.pdf-zone{border:1.5px dashed #ccc;border-radius:9px;padding:24px;text-align:center;cursor:pointer;margin-bottom:12px;transition:background .1s}
+.pdf-zone:hover,.pdf-zone.dv{background:#f0f7ff;border-color:#4a9eff}
+.pdf-zone i{font-size:26px;color:#999;display:block;margin-bottom:6px}
+.pdf-zone p{font-size:13px;color:#666}
+.analyzing{text-align:center;padding:24px;color:#666}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-lg{width:24px;height:24px;border:2px solid #ddd;border-top-color:#666;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+/* Version badge */
+.ver-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ver-badge{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600}
+.vb-active{background:#DCFCE7;color:#166534}
+.vb-archive{background:#f1f1ed;color:#666}
+.ver-src{font-size:12px;color:#666;display:flex;align-items:center;gap:3px}
+.ver-date{font-size:12px;color:#999}
+/* Check tab */
+.drop-zone{border:1.5px dashed #ccc;border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;margin-bottom:12px;transition:background .1s}
+.drop-zone:hover,.drop-zone.dv2{background:#f5f5f0}
+.drop-zone i{font-size:28px;color:#999;margin-bottom:7px;display:block}
+.ftype-pills{display:flex;gap:5px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.fpill{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid #ddd;color:#666}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.tc{background:#fff;border:1px solid #e8e8e4;border-radius:8px;overflow:hidden;position:relative}
+.tc img{width:100%;height:76px;object-fit:cover;display:block}
+.tc-icon{width:100%;height:76px;display:flex;align-items:center;justify-content:center;background:#f5f5f0;flex-direction:column;gap:3px}
+.tc-icon i{font-size:22px;color:#999}
+.tlabel{padding:5px 7px;font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbadge{position:absolute;top:4px;right:4px;font-size:10px;padding:2px 6px;border-radius:99px;font-weight:600}
+.bok{background:#DCFCE7;color:#166534}
+.bng{background:#FEE2E2;color:#991b1b}
+.bchk{background:#FEF9C3;color:#854d0e}
+.run-btn{padding:10px 18px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:6px;margin-bottom:14px;transition:background .1s}
+.run-btn:hover{background:#333}
+.reset-btn{padding:7px 12px;background:transparent;color:#666;border:1px solid #ddd;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit;display:flex;align-items:center;gap:5px;margin-bottom:12px;transition:background .1s}
+.reset-btn:hover{background:#f5f5f0}
+.res-item{background:#fff;border-left:3px solid;border-radius:0 8px 8px 0;padding:9px 13px;margin-bottom:7px;border-top:1px solid #e8e8e4;border-right:1px solid #e8e8e4;border-bottom:1px solid #e8e8e4}
+.res-item.ok{border-left-color:#22c55e}
+.res-item.ng{border-left-color:#ef4444}
+.res-fn{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.res-dt{font-size:12px;color:#666;line-height:1.6}
+.lrow{display:flex;align-items:center;gap:7px;font-size:12px;color:#666;padding:6px 0}
+.spin-sm{width:12px;height:12px;border:2px solid #ddd;border-top-color:#666;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.prog-bar{height:3px;background:#e8e8e4;border-radius:99px;margin-bottom:12px;overflow:hidden}
+.prog-fill{height:100%;background:#1a56db;border-radius:99px;transition:width .3s}
+.info-note{font-size:12px;color:#666;padding:7px 10px;background:#f0f7ff;border-radius:7px;margin-bottom:12px;display:flex;align-items:center;gap:5px;border:1px solid #c7deff}
+.empty{text-align:center;padding:36px 20px;color:#999;font-size:13px}
+.empty i{font-size:32px;margin-bottom:8px;display:block;color:#ccc}
+/* API Key */
+.apikey-bar{padding:10px 14px;background:#fffbeb;border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:8px;font-size:12px;color:#92400e}
+.apikey-bar input{flex:1;padding:5px 9px;border:1px solid #fcd34d;border-radius:6px;font-size:12px;font-family:inherit;background:#fff;outline:none;color:#1a1a1a}
+.apikey-bar input:focus{border-color:#f59e0b}
+.apikey-bar button{padding:5px 10px;background:#d97706;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit}
+.apikey-bar button:hover{background:#b45309}
+.saved-indicator{color:#166534;font-size:11px;display:flex;align-items:center;gap:3px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-head">
+      <h1>▷動画チェック</h1>
+      <span id="saveStatus" title="データはこのブラウザに自動保存されます"></span>
+    </div>
+    <div class="cl" id="clientList"></div>
+    <button class="add-cl" onclick="addClient()">+ クライアント追加</button>
+  </div>
+  <div class="main">
+    <div id="apikeyBar" class="apikey-bar">
+      🔑
+      <span>Anthropic APIキー：</span>
+      <input type="password" id="apikeyInput" placeholder="sk-ant-..." oninput="onApiKeyInput()">
+      <button onclick="saveApiKey()">保存</button>
+      <span id="apikeyStatus"></span>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-rules" onclick="switchTab('rules')">✓ ルール管理</div>
+      <div class="tab" id="tab-archive" onclick="switchTab('archive')">▤ アーカイブ</div>
+      <div class="tab" id="tab-check" onclick="switchTab('check')">⊡ チェック実行</div>
+      <div class="tab" id="tab-settings" onclick="switchTab('settings')">⚙ 設定</div>
+    </div>
+    <div class="content" id="mainContent"></div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#EBF5FF|#1a56db','#ECFDF5|#065f46','#FFF7ED|#9a3412','#FDF4FF|#7e22ce','#F0FDF4|#166534'];
+const CATS={デザイン:'#EBF5FF|#1a56db',テキスト:'#ECFDF5|#065f46',レイアウト:'#FFF7ED|#9a3412',アニメ:'#FDF4FF|#7e22ce',その他:'#f1f1ed|#555'};
+const STORAGE_KEY='video_check_app_v3';
+
+function cs(cat){const[bg,fg]=(CATS[cat]||'#f1f1ed|#555').split('|');return`background:${bg};color:${fg};`}
+function fmtDate(d){return new Date(d).toLocaleDateString('ja-JP',{year:'numeric',month:'short',day:'numeric'})}
+
+const DEFAULT_DATA={
+  clients:[
+    {id:1,name:'株式会社ABC',
+      manualRules:[
+        {id:1,cat:'デザイン',text:'ボタンだけを立体（3D風）にする'},
+        {id:2,cat:'テキスト',text:'「※」の次は必ず一段インデントを下げる'},
+      ],
+      guidelineVersions:[
+        {id:1,name:'ブランドガイドライン_2024Q1.pdf',date:'2024-03-01',active:false,rules:[
+          {id:1,cat:'デザイン',text:'メインカラーは #E53E3E（赤系）を使う'},
+          {id:2,cat:'レイアウト',text:'画面端から最低16pxのマージンを確保する'},
+        ]},
+        {id:2,name:'ブランドガイドライン_2024Q3.pdf',date:'2024-09-01',active:true,rules:[
+          {id:1,cat:'デザイン',text:'メインカラーは #2563EB（青系）に変更'},
+          {id:2,cat:'レイアウト',text:'画面端から最低16pxのマージンを確保する'},
+          {id:3,cat:'テキスト',text:'フォントはNoto Sans JP統一'},
+        ]},
+      ]
+    },
+    {id:2,name:'DEF株式会社',
+      manualRules:[{id:1,cat:'テキスト',text:'フォントサイズは本文14px以上'}],
+      guidelineVersions:[]
+    },
+  ],
+  activeClient:1,
+  nrid:20,nvid:10,
+};
+
+// Load from localStorage
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw)return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveData(){
+  try{
+    const toSave={clients:S.clients,activeClient:S.activeClient,nrid:S.nrid,nvid:S.nvid};
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(toSave));
+    const el=document.getElementById('saveStatus');
+    if(el){el.innerHTML='<span style="font-size:11px;color:#22c55e">● 保存済み</span>'}
+  }catch(e){console.error('Save failed',e)}
+}
+
+const saved=loadData();
+let S={
+  ...saved,
+  tab:'rules',
+  files:[],results:[],checking:false,analyzingPdf:false,
+};
+
+// API Key
+function loadApiKey(){return localStorage.getItem('video_check_apikey')||''}
+function saveApiKey(){
+  const v=document.getElementById('apikeyInput').value.trim();
+  if(!v){alert('APIキーを入力してください');return}
+  localStorage.setItem('video_check_apikey',v);
+  document.getElementById('apikeyStatus').innerHTML='<span class="saved-indicator">✓保存しました</span>';
+  setTimeout(()=>{const el=document.getElementById('apikeyStatus');if(el)el.innerHTML=''},2000);
+  updateApiKeyBar();
+}
+function onApiKeyInput(){}
+function updateApiKeyBar(){
+  const key=loadApiKey();
+  const bar=document.getElementById('apikeyBar');
+  const input=document.getElementById('apikeyInput');
+  if(key&&bar&&input){
+    input.value='sk-ant-••••••••••••••••';
+    bar.style.background='#f0fdf4';
+    bar.style.borderBottomColor='#86efac';
+    bar.style.color='#166534';
+  }
+}
+
+function gc(){return S.clients.find(c=>c.id===S.activeClient)}
+function activeVer(c){return c.guidelineVersions.find(v=>v.active)}
+function allActiveRules(c){return[...(c.manualRules||[]),...((activeVer(c)||{rules:[]}).rules)]}
+
+function renderSidebar(){
+  document.getElementById('clientList').innerHTML=S.clients.map((c,i)=>{
+    const[bg,fg]=COLORS[i%COLORS.length].split('|');
+    return`<div class="ci ${c.id===S.activeClient?'active':''}" onclick="selClient(${c.id})">
+      <div class="av" style="background:${bg};color:${fg};">${c.name.slice(0,2)}</div>
+      <span class="ci-name">${c.name}</span>
+    </div>`;
+  }).join('');
+}
+
+function selClient(id){S.activeClient=id;S.files=[];S.results=[];saveData();renderSidebar();renderMain()}
+
+function addClient(){
+  const n=prompt('クライアント名:');if(!n)return;
+  S.clients.push({id:Date.now(),name:n,manualRules:[],guidelineVersions:[]});
+  S.activeClient=S.clients[S.clients.length-1].id;
+  saveData();renderSidebar();renderMain();
+}
+
+function switchTab(t){
+  S.tab=t;
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  renderMain();
+}
+
+function renderMain(){
+  const el=document.getElementById('mainContent');
+  if(S.tab==='rules')el.innerHTML=renderRules();
+  else if(S.tab==='archive')el.innerHTML=renderArchive();
+  else if(S.tab==='settings')el.innerHTML=renderSettings();
+  else el.innerHTML=renderCheck();
+  attachEvents();
+}
+
+function renderRules(){
+  const c=gc();if(!c)return emptyState('クライアントを選択してください');
+  const av=activeVer(c);
+  const total=allActiveRules(c).length;
+
+  const guidelineSection=S.analyzingPdf?`
+    <div class="analyzing">
+      <div class="spin-lg"></div>
+      <p style="font-size:13px">PDFを解析中…ルールを自動抽出しています</p>
+    </div>`:
+    `<label class="pdf-zone" id="pdfZone">
+      PDF
+      <p>ガイドラインPDFをドロップして自動登録</p>
+      <p style="font-size:11px;margin-top:4px;color:#999">AIがルールを自動抽出・登録します</p>
+      <input type="file" accept="application/pdf" style="display:none" id="glPdfInput" onchange="handleGuidelinePdf(this.files[0])">
+    </label>
+    ${av?`<div class="card">
+      <div class="ver-header">
+        <span class="ver-badge vb-active">現行バージョン</span>
+        <span class="ver-src">PDF${av.name}</span>
+        <span class="ver-date">${fmtDate(av.date)}</span>
+      </div>
+      ${av.rules.map(r=>`<div class="rule-item">
+        <span class="rcat" style="${cs(r.cat)}">${r.cat}</span>
+        <span class="rtxt">${r.text}</span>
+      </div>`).join('')}
+    </div>`:`<p style="font-size:13px;color:#999;padding:6px 0 12px">ガイドラインPDFがまだ登録されていません</p>`}`;
+
+  return`<div>
+    <div class="sec-title">✓${c.name} のルール <span style="font-size:11px;color:#999;font-weight:400;margin-left:4px">合計 ${total}件</span></div>
+    <div class="sect-div">PDFPDFガイドライン</div>
+    ${guidelineSection}
+    <div class="sect-div">✏手打ちルール（常時有効）</div>
+    <div class="card">
+      ${c.manualRules.length?c.manualRules.map(r=>`<div class="rule-item">
+        <span class="rcat" style="${cs(r.cat)}">${r.cat}</span>
+        <span class="rtxt">${r.text}</span>
+        <button class="ibtn" onclick="delManual(${r.id})" title="削除">✕</button>
+      </div>`).join(''):`<p style="font-size:13px;color:#999;padding:4px 0 8px">手打ちルールがありません</p>`}
+      <div class="add-area">
+        <div class="add-row">
+          <select id="nc">${Object.keys(CATS).map(k=>`<option>${k}</option>`).join('')}</select>
+          <input id="nr" type="text" placeholder="口頭で言われたルール、MTGメモなど…" onkeydown="if(event.key==='Enter')addManual()"/>
+          <button onclick="addManual()">+ 追加</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderArchive(){
+  const c=gc();if(!c)return emptyState('クライアントを選択してください');
+  const archived=c.guidelineVersions.filter(v=>!v.active);
+  if(!archived.length)return`<div class="empty">▤アーカイブはまだありません<p style="margin-top:6px;font-size:12px">PDFガイドラインを更新すると旧バージョンがここに保存されます</p></div>`;
+  return`<div>
+    <div class="sec-title">▤アーカイブ済みガイドライン</div>
+    ${archived.slice().reverse().map(v=>`<div class="card">
+      <div class="ver-header">
+        <span class="ver-badge vb-archive">アーカイブ</span>
+        <span class="ver-src">PDF${v.name}</span>
+        <span class="ver-date">${fmtDate(v.date)}</span>
+      </div>
+      ${v.rules.map(r=>`<div class="rule-item">
+        <span class="rcat" style="${cs(r.cat)}">${r.cat}</span>
+        <span class="rtxt" style="color:#999">${r.text}</span>
+      </div>`).join('')}
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderCheck(){
+  const c=gc();if(!c)return emptyState('クライアントを選択してください');
+  const rules=allActiveRules(c);
+  const done=S.results.length,total=S.files.length;
+  const prog=total?Math.round(done/total*100):0;
+  const hasKey=!!loadApiKey();
+
+  const thumbs=S.files.length?`<div class="thumb-grid">${S.files.map((f,i)=>{
+    const r=S.results.find(r=>r.idx===i);
+    let badge=S.checking&&!r?`<span class="tbadge bchk">確認中</span>`:r?`<span class="tbadge ${r.ok?'bok':'bng'}">${r.ok?'OK':'NG'}</span>`:'';
+    if(f.type==='pdf')return`<div class="tc">${badge}<div class="tc-icon">PDF</div><div class="tlabel">${f.name}</div></div>`;
+    if(f.type==='video')return`<div class="tc">${badge}<div class="tc-icon">▷<span style="font-size:10px;color:#999">${f.frames}フレーム</span></div><div class="tlabel">${f.name}</div></div>`;
+    return`<div class="tc">${badge}<img src="${f.url}" alt="${f.name}"><div class="tlabel">${f.name}</div></div>`;
+  }).join('')}</div>`:'';
+
+  const results=S.results.length&&!S.checking?S.results.map(r=>`
+    <div class="res-item ${r.ok?'ok':'ng'}">
+      <div class="res-fn"><i class="ti ${r.ok?'ti-circle-check':'ti-alert-circle'}" style="color:${r.ok?'#22c55e':'#ef4444'}"></i>${r.name} — ${r.ok?'OK':'NG'}</div>
+      <div class="res-dt">${r.detail}</div>
+    </div>`).join(''):'';
+
+  return`<div>
+    <div class="info-note">ℹチェックに使用中のルール：PDFガイドライン ${(activeVer(c)||{rules:[]}).rules.length}件 ＋ 手打ち ${c.manualRules.length}件 ＝ 合計 ${rules.length}件</div>
+    ${!hasKey?`<div style="padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;font-size:12px;color:#9a3412;margin-bottom:12px">⚠ APIキーが未設定です。上部のバーに入力して保存してください。</div>`:''}
+    <label class="drop-zone" id="dropZone">
+      ↑
+      <p style="font-size:13px">ファイルをドロップ、またはクリックして選択</p>
+      <div class="ftype-pills">
+        <span class="fpill">⊡ PNG/JPG</span>
+        <span class="fpill">PDF PDF</span>
+        <span class="fpill">▷ MP4</span>
+      </div>
+      <input type="file" id="fi" multiple accept="image/*,video/mp4,application/pdf" style="display:none" onchange="handleCheckFiles(this.files)">
+    </label>
+    ${thumbs}
+    ${S.checking?`<div class="prog-bar"><div class="prog-fill" style="width:${prog}%"></div></div>${S.files.filter((_,i)=>!S.results.find(r=>r.idx===i)).map(f=>`<div class="lrow"><div class="spin-sm"></div>${f.name} をチェック中…</div>`).join('')}`:''}
+    ${S.files.length&&!S.checking&&!S.results.length?`<button class="run-btn" onclick="runCheck()">✦ AIチェック実行（${rules.length}件のルール）</button>`:''}
+    ${S.results.length&&!S.checking?`<button class="reset-btn" onclick="resetCheck()">↺ リセット</button>${results}`:''}
+  </div>`;
+}
+
+function renderSettings(){
+  const dataSize=(()=>{try{const raw=localStorage.getItem(STORAGE_KEY);return raw?Math.round(raw.length/1024*10)/10:0}catch(e){return 0}})();
+  const clientCount=S.clients.length;
+  const ruleCount=S.clients.reduce((a,c)=>a+(c.manualRules||[]).length+c.guidelineVersions.reduce((b,v)=>b+v.rules.length,0),0);
+  const verCount=S.clients.reduce((a,c)=>a+c.guidelineVersions.length,0);
+  const keySet=!!loadApiKey();
+  return`<div>
+    <div class="sec-title">⚙設定</div>
+
+    <div class="sect-div">🔑APIキー</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:13px;color:#666;flex:1">Anthropic APIキーの状態</span>
+        <span style="font-size:12px;padding:3px 10px;border-radius:99px;font-weight:600;${keySet?'background:#DCFCE7;color:#166534':'background:#FEE2E2;color:#991b1b'}">${keySet?'● 設定済み':'● 未設定'}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input type="password" id="settingsApiKey" placeholder="sk-ant-…" style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;outline:none;color:#1a1a1a">
+        <button onclick="saveApiKeyFromSettings()" style="padding:7px 14px;background:#1a1a1a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit">保存</button>
+        ${keySet?`<button onclick="clearApiKey()" style="padding:7px 12px;background:transparent;color:#ef4444;border:1px solid #fca5a5;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit">削除</button>`:''}
+      </div>
+      <p style="font-size:11px;color:#999;margin-top:7px">ℹ APIキーはこのブラウザのlocalStorageに保存されます。他の人のPCには共有されません。</p>
+    </div>
+
+    <div class="sect-div">▦保存データの状況</div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+        <div style="background:#f9f9f7;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#1a1a1a">${clientCount}</div>
+          <div style="font-size:11px;color:#999;margin-top:2px">クライアント</div>
+        </div>
+        <div style="background:#f9f9f7;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#1a1a1a">${ruleCount}</div>
+          <div style="font-size:11px;color:#999;margin-top:2px">総ルール数</div>
+        </div>
+        <div style="background:#f9f9f7;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#1a1a1a">${verCount}</div>
+          <div style="font-size:11px;color:#999;margin-top:2px">ガイドライン版数</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f9f9f7;border-radius:8px;margin-bottom:10px">
+        <span style="font-size:13px;color:#666">使用サイズ</span>
+        <span style="font-size:13px;font-weight:600;color:#1a1a1a">${dataSize} KB <span style="font-size:11px;font-weight:400;color:#999">/ 約5,000 KB上限</span></span>
+      </div>
+      <p style="font-size:11px;color:#999;margin-bottom:12px">ℹ チェック用にアップした画像・動画・PDFはメモリ上のみで、ここには含まれません。</p>
+    </div>
+
+    <div class="sect-div">↓データのエクスポート</div>
+    <div class="card">
+      <p style="font-size:13px;color:#666;margin-bottom:12px">全データをJSONファイルとして書き出します。将来Supabase等に移行する際のバックアップにも使えます。</p>
+      <button onclick="exportData()" style="padding:8px 16px;background:#1a56db;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px">↓ JSONエクスポート</button>
+    </div>
+
+    <div class="sect-div" style="color:#ef4444">⚠データの削除</div>
+    <div class="card" style="border-color:#fca5a5">
+      <p style="font-size:13px;color:#666;margin-bottom:6px">このブラウザに保存されているすべてのクライアント・ルールデータを削除します。</p>
+      <p style="font-size:12px;color:#ef4444;margin-bottom:12px;display:flex;align-items:center;gap:4px">!この操作は取り消せません。事前にエクスポートを推奨します。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="deleteClientData()" style="padding:8px 16px;background:transparent;color:#ef4444;border:1px solid #fca5a5;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px">✕ クライアント・ルールデータを削除</button>
+        <button onclick="deleteAllData()" style="padding:8px 16px;background:#ef4444;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px">✕ APIキーも含めてすべて削除</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function saveApiKeyFromSettings(){
+  const v=document.getElementById('settingsApiKey').value.trim();
+  if(!v){alert('APIキーを入力してください');return}
+  localStorage.setItem('video_check_apikey',v);
+  updateApiKeyBar();
+  renderMain();
+}
+
+function clearApiKey(){
+  if(!confirm('APIキーを削除しますか？'))return;
+  localStorage.removeItem('video_check_apikey');
+  updateApiKeyBar();
+  renderMain();
+}
+
+function exportData(){
+  const data={exportedAt:new Date().toISOString(),clients:S.clients};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`video_check_export_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function deleteClientData(){
+  if(!confirm('クライアント・ルールデータをすべて削除しますか？\nこの操作は取り消せません。'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  const fresh=JSON.parse(JSON.stringify(DEFAULT_DATA));
+  S.clients=fresh.clients;S.activeClient=fresh.activeClient;S.nrid=fresh.nrid;S.nvid=fresh.nvid;
+  S.files=[];S.results=[];
+  renderSidebar();renderMain();
+}
+
+function deleteAllData(){
+  if(!confirm('APIキーを含むすべてのデータを削除しますか？\nこの操作は取り消せません。'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem('video_check_apikey');
+  const fresh=JSON.parse(JSON.stringify(DEFAULT_DATA));
+  S.clients=fresh.clients;S.activeClient=fresh.activeClient;S.nrid=fresh.nrid;S.nvid=fresh.nvid;
+  S.files=[];S.results=[];
+  updateApiKeyBar();
+  renderSidebar();renderMain();
+}
+
+function emptyState(msg){return`<div class="empty">👥${msg}</div>`}
+
+function attachEvents(){
+  const dz=document.getElementById('dropZone');
+  if(dz){
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dv2')});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dv2'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dv2');handleCheckFiles(e.dataTransfer.files)});
+  }
+  const pz=document.getElementById('pdfZone');
+  if(pz){
+    pz.addEventListener('dragover',e=>{e.preventDefault();pz.classList.add('dv')});
+    pz.addEventListener('dragleave',()=>pz.classList.remove('dv'));
+    pz.addEventListener('drop',e=>{e.preventDefault();pz.classList.remove('dv');handleGuidelinePdf(e.dataTransfer.files[0])});
+  }
+}
+
+async function handleGuidelinePdf(file){
+  if(!file||file.type!=='application/pdf')return;
+  const c=gc();
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const b64=e.target.result.split(',')[1];
+    S.analyzingPdf=true;renderMain();
+    try{
+      const res=await callAPI([{
+        type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}
+      },{
+        type:'text',
+        text:`このPDFはクライアントの動画・映像制作ガイドラインです。デザイン・テキスト・レイアウト・アニメーション・その他に関するルールをすべて抽出してください。
+
+以下のJSON形式のみで返してください。他のテキストは不要です。
+{"rules":[{"cat":"カテゴリ名","text":"ルールの内容（簡潔に1文で）"},...]}
+
+catは「デザイン」「テキスト」「レイアウト」「アニメ」「その他」のいずれか。ルールは具体的かつ簡潔に。重複は除く。`
+      }],2000);
+      const txt=res.content.map(c=>c.text||'').join('');
+      let parsed;
+      try{parsed=JSON.parse(txt.replace(/```json|```/g,'').trim())}catch(e){parsed={rules:[]}}
+      const newRules=(parsed.rules||[]).map(r=>({id:S.nrid++,...r}));
+      const newVer={id:S.nvid++,name:file.name,date:new Date().toISOString().slice(0,10),active:true,rules:newRules};
+      c.guidelineVersions.forEach(v=>v.active=false);
+      c.guidelineVersions.push(newVer);
+      saveData();
+    }catch(e){alert('PDF解析エラー: '+e.message)}
+    S.analyzingPdf=false;renderMain();
+  };
+  reader.readAsDataURL(file);
+}
+
+function addManual(){
+  const cat=document.getElementById('nc').value;
+  const text=document.getElementById('nr').value.trim();
+  if(!text)return;
+  gc().manualRules.push({id:S.nrid++,cat,text});
+  saveData();renderMain();
+}
+
+function delManual(id){
+  gc().manualRules=gc().manualRules.filter(r=>r.id!==id);
+  saveData();renderMain();
+}
+
+function resetCheck(){S.files=[];S.results=[];S.checking=false;renderMain()}
+
+function handleCheckFiles(files){
+  Array.from(files).forEach(file=>{
+    if(file.type==='application/pdf'){
+      const r=new FileReader();r.onload=e=>{S.files.push({name:file.name,type:'pdf',data:e.target.result.split(',')[1]});renderMain()};r.readAsDataURL(file);
+    }else if(file.type==='video/mp4'){
+      extractFrames(file);
+    }else{
+      const r=new FileReader();r.onload=e=>{S.files.push({name:file.name,type:'image',url:e.target.result,data:e.target.result.split(',')[1]});renderMain()};r.readAsDataURL(file);
+    }
+  });
+}
+
+function extractFrames(file){
+  const url=URL.createObjectURL(file);
+  const video=document.createElement('video');video.src=url;video.muted=true;
+  video.addEventListener('loadedmetadata',()=>{
+    const times=[];for(let t=0;t<video.duration;t+=2)times.push(t);
+    const sel=times.slice(0,8);const frames=[];let fi=0;
+    const next=()=>{
+      if(fi>=sel.length){
+        S.files.push({name:file.name,type:'video',frames:frames.length,frameData:frames});
+        URL.revokeObjectURL(url);renderMain();return;
+      }
+      video.currentTime=sel[fi];
+    };
+    video.addEventListener('seeked',()=>{
+      const cv=document.createElement('canvas');
+      cv.width=Math.min(video.videoWidth,640);
+      cv.height=Math.round(video.videoHeight*(cv.width/video.videoWidth));
+      cv.getContext('2d').drawImage(video,0,0,cv.width,cv.height);
+      frames.push({data:cv.toDataURL('image/jpeg',.8).split(',')[1]});
+      fi++;next();
+    });
+    next();
+  });video.load();
+}
+
+async function callAPI(content,maxTokens=1000){
+  const key=loadApiKey();
+  if(!key)throw new Error('APIキーが設定されていません。上部のバーに入力してください。');
+  const res=await fetch('/.netlify/functions/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:[{role:'user',content}]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'APIエラー')}
+  return res.json();
+}
+
+async function runCheck(){
+  const c=gc();
+  const rules=allActiveRules(c);
+  if(!rules.length){alert('ルールを先に登録してください');return}
+  if(!loadApiKey()){alert('APIキーを上部のバーに入力・保存してください');return}
+  S.checking=true;S.results=[];renderMain();
+  const rulesText=rules.map((r,n)=>`${n+1}. [${r.cat}] ${r.text}`).join('\n');
+  const prompt=`あなたは動画・画面デザインのチェック担当です。以下のルールに対してOK/NGを判定してください。\n\n【チェックルール】\n${rulesText}\n\nJSON形式のみで返してください。\n{"ok":true/false,"violations":["違反内容の具体的な説明"],"notes":"全体コメント1〜2文"}\nokはすべてのルールをクリアした場合のみtrue。`;
+
+  for(let i=0;i<S.files.length;i++){
+    const f=S.files[i];
+    try{
+      let content=[];
+      if(f.type==='pdf')content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data}},{type:'text',text:prompt}];
+      else if(f.type==='video')content=[...f.frameData.map(fr=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:fr.data}})),{type:'text',text:`動画「${f.name}」の${f.frameData.length}フレームです。\n${prompt}`}];
+      else content=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:f.data}},{type:'text',text:prompt}];
+      const d=await callAPI(content);
+      const txt=d.content.map(c=>c.text||'').join('');
+      let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim())}catch(e){p={ok:false,violations:['解析エラー'],notes:''}}
+      const detail=p.ok?`✓ ${p.notes||'全ルールをクリアしました'}`:`${(p.violations||[]).map(v=>`• ${v}`).join('<br>')}${p.notes?`<br><span style="color:#999">${p.notes}</span>`:''}`;
+      S.results.push({idx:i,name:f.name,ok:p.ok,detail});
+    }catch(e){S.results.push({idx:i,name:f.name,ok:false,detail:`エラー: ${e.message}`})}
+    renderMain();
+  }
+  S.checking=false;renderMain();
+}
+
+// Init
+updateApiKeyBar();
+renderSidebar();
+renderMain();
+saveData();
+</script>
+</body>
+</html>
