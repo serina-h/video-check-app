@@ -582,7 +582,7 @@ function extractFrames(file){
 async function callAPI(content,maxTokens=1000){
   const key=loadApiKey();
   if(!key)throw new Error('APIキーが設定されていません。上部のバーに入力してください。');
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
+  const res=await fetch('/.netlify/functions/claude',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:[{role:'user',content}]})
