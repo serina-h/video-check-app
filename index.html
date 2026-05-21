@@ -605,8 +605,8 @@ async function runCheck(){
     try{
       let content=[];
       if(f.type==='pdf')content=[{type:'document',source:{type:'base64',media_type:'application/pdf',data:f.data}},{type:'text',text:prompt}];
-      else if(f.type==='video')content=[...f.frameData.map(fr=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:fr.data}})),{type:'text',text:`動画「${f.name}」の${f.frameData.length}フレームです。\n${prompt}`}];
-      else content=[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:f.data}},{type:'text',text:prompt}];
+      else if(f.type==='video')content=[...f.frameData.map(fr=>({type:'image',source:{type:'base64',media_type:'image/png',data:fr.data}})),{type:'text',text:`動画「${f.name}」の${f.frameData.length}フレームです。\n${prompt}`}];
+      else content=[{type:'image',source:{type:'base64',media_type:'image/png',data:f.data}},{type:'text',text:prompt}];
       const d=await callAPI(content);
       const txt=d.content.map(c=>c.text||'').join('');
       let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim())}catch(e){p={ok:false,violations:['解析エラー'],notes:''}}
